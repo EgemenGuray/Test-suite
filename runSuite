@@ -1,0 +1,89 @@
+#!/bin/sh                                                                       
+if [ $# -ne 2 ]; then
+    echo "Entered ${#} args expected 2 args" >&2
+    exit 1
+else
+    while read line; do
+		for word in $line; do
+			if [ -e $word.out ]; then
+				if [ -e $word.args ]; then
+					if [ -e $word.in ]; then
+						tmpfile=$(mktemp)
+						cat $word.in | $2 $(cat $word.args) 1> "$tmpfile"
+						cmp $tmpfile $word.out > /dev/null
+					   	x=$?
+					    z=0
+					    if [ "$z" -ne "$x" ]; then
+					    	echo Test failed: $word
+					    	echo Args:
+					    	echo $(cat $word.args)
+					    	echo Input:
+					    	echo $(cat $word.in)
+					    	echo Expected:
+					    	echo $(cat $word.out)
+					    	echo Actual:
+					    	echo $(cat $tmpfile)
+				    	fi 
+				    	rm "$tmpfile"
+					else
+						tmpfile=$(mktemp)
+						$2 $(cat $word.args) 1> "$tmpfile"
+						cmp $tmpfile $word.out > /dev/null
+					   	x=$?
+					    z=0
+					    if [ "$z" -ne "$x" ]; then
+					    	echo Test failed: $word
+					    	echo Args:
+					    	echo $(cat $word.args)
+					    	echo Input:
+					    	echo Expected:
+					    	echo $(cat $word.out)
+					    	echo Actual:
+					    	echo $(cat $tmpfile)
+				    	fi 
+				    	rm "$tmpfile"
+					fi
+				else
+					if [ -e $word.in ]; then
+						tmpfile=$(mktemp)
+						cat $word.in | $2 1> "$tmpfile"
+						cmp $tmpfile $word.out > /dev/null
+					   	x=$?
+					    z=0
+					    if [ "$z" -ne "$x" ]; then
+					    	echo Test failed: $word
+					    	echo Args:
+					    	echo Input:
+					    	echo Expected:
+					    	echo $(cat $word.out)
+					    	echo Actual:
+					    	echo $(cat $tmpfile)
+				    	fi 
+				    	rm "$tmpfile"
+					else
+						tmpfile=$(mktemp)
+						$2 1> "$tmpfile"
+						cmp $tmpfile $word.out > /dev/null
+					   	x=$?
+					    z=0
+					    if [ diff $tmpfile $word.out >/dev/null ]; then
+
+					    	echo Test failed: $word
+					    	echo Args:
+					    	echo Input:
+					    	echo Expected:
+					    	echo $(cat $word.out)
+					    	echo Actual:
+					    	echo $(cat $tmpfile)
+				    	fi 
+				    	rm "$tmpfile"
+					fi
+				fi
+				
+			else
+				echo "$word.out is missing or unreadable" >&2
+    			exit 2
+			fi
+		done 
+    done < $1
+fi
